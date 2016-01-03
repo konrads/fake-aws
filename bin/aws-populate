@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# lifted of: https://github.com/trayio/dynamodb-local
+# uses: http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html
+curr_dir="$(dirname "$0")"
+if [ "$data_dir" = "" ]
+then
+  data_dir="$(dirname "$curr_dir")/aws-data"
+fi
+if [ "$endpoint_host" != "" ]
+then
+  dynamodb_endpoint_param="--endpoint-url http://$endpoint_host:7777"
+  s3_endpoint_param="--endpoint-url http://$endpoint_host:4569"
+  redis_endpoint_param="-h $endpoint_host"
+fi
+. $curr_dir/commons.sh
+
+usage() {
+  echo "  Usage:"
+  echo "    help"
+  echo "    tables  delete"
+  echo "    tables  create"
+  echo "    tables  populate"
+  echo "    refresh all"
+  exit 1
+}
+
+wait_till_table_doesnt_exist() {
+  local table=$1
+  local exists=true
+  set +e
+  for i in $(seq 10)  # 10 retries
+  do
+    aws dynamodb describe-table $dynamodb_endpoint_param --table-name $table
+    if [ "$?" != "0" ]; then
+      exists=false
+      break
+    fi
+    echo "  $table still exists..."
+    sleep 3
+  done
+  assert_eq "$table exists" "$exists" "false"
+  set -e
+}
+
+wait_till_table_status() {
+  local table=$1
+  local exp_status=$2
+  local is_active=false
+  for i in $(seq 10)  # 10 retries
+  do
+    local status=$(aws dynamodb describe-table $dynamodb_endpoint_param --table-name $table | jq '.Table.TableStatus')
+    if [ "$status" = "\"$exp_status\"" ]; then
+      is_active=true
+      break
+    fi
+    echo "  $table status: $status..."
+    sleep 3
+  done
+  assert_eq "$table active" "$is_active" "true"
+}
+
+tablename() {
+  # Truncate extensions 3 times...
+  local f1=$1
+  local f2="${f1##*/}"
+  local f3="${f2%.*}"
+  local f4="${f3%.*}"
+  echo "${f4%.*}"
+}
+
+if [[ $# -lt 1 || "$1" == "help" ]]; then usage; fi
+
+set -e
+
+ensure_tools "aws --version" "jq --version"
+case "$1 $2" in
+  "tables delete")
+    for table_file in $data_dir/dynamodb/schema/*.schema.json
+    do
+      table=$(tablename $table_file)
+      echo $table_file $table
+      set +e
+      log_green "  ..deleting table $table"
+      aws dynamodb delete-table $dynamodb_endpoint_param --table-name $table
+      wait_till_table_doesnt_exist $table
+    done
+    set -e
+    ;;
+  "tables create")
+    for table_file in $data_dir/dynamodb/schema/*.schema.json
+    do
+      table=$(tablename $table_file)
+      log_green "  ..creating table $table"
+      aws dynamodb create-table $dynamodb_endpoint_param --table-name $table --cli-input-json file://$table_file
+      wait_till_table_status $table ACTIVE
+    done
+    ;;
+  "tables populate")
+    for data_file in $data_dir/dynamodb/data/*.data.json
+    do
+      log_green "  ..populating with data $data_file"
+      aws dynamodb batch-write-item $dynamodb_endpoint_param --cli-input-json file://$data_file
+    done
+    ;;
+  "refresh all")
+    $0 tables delete
+    $0 tables create
+    $0 tables populate
+    ;;
+  *)
+    echo -e "  ${red}Not a valid command${reset}"
+    usage
+    ;;
+esac

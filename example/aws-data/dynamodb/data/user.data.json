@@ -1,0 +1,36 @@
+{
+  "RequestItems": {
+    "user": [
+      {
+        "PutRequest": {
+          "Item": {
+            "user_id": { "S": "uuid1" },
+            "timestamp": { "N": "1451846300" },
+            "subscription": { "M": { "standard": { "M": { "freq": { "S": "monthly" } } } } }
+          }
+        }
+      },
+      {
+        "PutRequest": {
+          "Item": {
+            "user_id": { "S": "uuid2" },
+            "timestamp": { "N": "1451846500" },
+            "subscription": { "M": { "senior": { "M": { "freq": { "S": "weekly" } } } } }
+          }
+        }
+      },
+      {
+        "PutRequest": {
+          "Item": {
+            "user_id": { "S": "uuid3" },
+            "timestamp": { "N": "1451846700" },
+            "subscription": { "M": { "student": { "M": { "freq": { "M": {
+                        "days_in_year":  { "N": "230" },
+                        "discount_rate": { "N": "0.7" }
+            } } } } } }
+          }
+        }
+      }
+    ]
+  }
+}
