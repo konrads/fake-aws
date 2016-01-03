@@ -1,0 +1,5 @@
+{
+    "standard": { "rate": 36.0 },
+    "senior":   { "rate": 24.0 },
+    "student":  { "rate": 12.0 }
+}

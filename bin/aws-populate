@@ -20,6 +20,9 @@ usage() {
   echo "    tables  delete"
   echo "    tables  create"
   echo "    tables  populate"
+  echo "    buckets delete"
+  echo "    buckets create"
+  echo "    buckets populate"
   echo "    refresh all"
   exit 1
 }
@@ -102,10 +105,31 @@ case "$1 $2" in
       aws dynamodb batch-write-item $dynamodb_endpoint_param --cli-input-json file://$data_file
     done
     ;;
+  "buckets delete")
+    for bucket in $(ls $data_dir/s3)
+    do
+      aws s3 $s3_endpoint_param rb s3://$bucket
+    done
+    ;;
+  "buckets create")
+    for bucket in $(ls $data_dir/s3)
+    do
+      aws s3 $s3_endpoint_param mb s3://$bucket
+    done
+    ;;
+  "buckets populate")
+    for bucket in $(ls $data_dir/s3)
+    do
+      aws s3 $s3_endpoint_param cp $data_dir/s3/$bucket s3://$bucket/ --recursive
+    done
+    ;;
   "refresh all")
     $0 tables delete
     $0 tables create
     $0 tables populate
+    $0 buckets delete
+    $0 buckets create
+    $0 buckets populate
     ;;
   *)
     echo -e "  ${red}Not a valid command${reset}"
