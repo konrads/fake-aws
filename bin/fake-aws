@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 ns=fake_aws
 curr_dir="$(dirname "$0")"
 . $curr_dir/commons.sh
@@ -48,10 +47,11 @@ case "$1 $2" in
     set -e
     log_green "  ..starting containers"
     docker run --hostname ${ns}_dynamodb --name ${ns}_dynamodb --privileged -p 7777:7777 -td ${ns}/dynamodb -inMemory -port 7777
-    docker run --hostname ${ns}_s3       --name ${ns}_s3       --privileged -p 4569:4569 -td ${ns}/s3
+    docker run --hostname ${ns}_s3       --name ${ns}_s3       --privileged -p 8080:8080 -td ${ns}/s3
     docker run --hostname ${ns}_redis    --name ${ns}_redis    --privileged -p 6379:6379 -td ${ns}/redis
     ;;
   "containers kill")
+    set +e
     log_green "  ..stopping containers"
     docker stop  ${ns}_dynamodb ${ns}_s3 ${ns}_redis ${ns}_client
     log_green "  ..removing containers"
@@ -61,8 +61,8 @@ case "$1 $2" in
     log_green "  ..creating data"
     # FIXME: hostname endpoints are not resolved
     cli aws dynamodb --endpoint-url http://$(get_docker_ip ${ns}_dynamodb):7777 list-tables
-    cli aws s3 --endpoint-url http://$(get_docker_ip ${ns}_s3):4569 mb s3://dummy
-    cli aws s3 --endpoint-url http://$(get_docker_ip ${ns}_s3):4569 ls s3://dummy
+    cli aws s3 --endpoint-url http://$(get_docker_ip ${ns}_s3):8080 mb s3://dummy
+    cli aws s3 --endpoint-url http://$(get_docker_ip ${ns}_s3):8080 ls s3://dummy
     cli redis-cli -h $(get_docker_ip ${ns}_redis) keys \\*
     cli bash
     ;;

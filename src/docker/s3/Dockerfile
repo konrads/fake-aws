@@ -1,15 +1,22 @@
-FROM        ubuntu
-# copy of https://github.com/lphoward/fake-s3
-ENV DEBIAN_FRONTEND noninteractive
+FROM tray/java:8-jre
+RUN        apt-get update
+COPY       fs/opt/s3proxy /opt/s3proxy
+RUN        mkdir -p /opt/s3proxy/data
+RUN        mkdir -p /opt/s3proxy/src
+RUN        apt-get install -y git maven
+RUN        cd /opt/s3proxy/src && git clone https://github.com/andrewgaul/s3proxy.git
+RUN        cd /opt/s3proxy/src/s3proxy && mvn clean compile assembly:single
+RUN        cp /opt/s3proxy/src/s3proxy/target/s3proxy-*-with-dependencies.jar /opt/s3proxy/s3proxy.jar
 
-# install Ruby
-RUN apt-get update && apt-get install -yqq ruby rubygems-integration
+# entrypoing for server
+EXPOSE     8080
+ENTRYPOINT ["java", "-jar", "/opt/s3proxy/s3proxy.jar", "--properties", "/opt/s3proxy/s3proxy.conf"]
 
-# install fake-s3
-RUN gem install fakes3 -v 0.2.2
+# NOTE - above could be reduced to following, once 1.5.0 version is released...
 
-# run fake-s3
-RUN mkdir -p /fakes3_root
-ENTRYPOINT ["/usr/local/bin/fakes3"]
-CMD ["-r",  "/fakes3_root", "-p",  "4569"]
-EXPOSE 4569
+# RUN        curl -o /opt/s3proxy/s3proxy -L https://github.com/andrewgaul/s3proxy/releases/download/s3proxy-1.5.0/s3proxy
+# RUN        chmod +x /opt/s3proxy/s3proxy
+
+# entrypoing for server
+# EXPOSE     8080
+# ENTRYPOINT ["/opt/s3proxy/s3proxy", "--properties", "/opt/s3proxy/s3proxy.conf"]

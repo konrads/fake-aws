@@ -9,7 +9,7 @@ fi
 if [ "$endpoint_host" != "" ]
 then
   dynamodb_endpoint_param="--endpoint-url http://$endpoint_host:7777"
-  s3_endpoint_param="--endpoint-url http://$endpoint_host:4569"
+  s3_endpoint_param="--endpoint-url http://$endpoint_host:8080"
   redis_endpoint_param="-h $endpoint_host"
 fi
 . $curr_dir/commons.sh
