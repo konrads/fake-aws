@@ -1,6 +1,6 @@
 {
   "RequestItems": {
-    "user": [
+    "{{prefix}}_user": [
       {
         "PutRequest": {
           "Item": {

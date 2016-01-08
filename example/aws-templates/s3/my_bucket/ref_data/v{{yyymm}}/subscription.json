@@ -1,0 +1,5 @@
+{
+    "standard": { "rate": 36.0, "ts": {{ts}} },
+    "senior":   { "rate": 24.0, "ts": {{ts-1}} },
+    "student":  { "rate": 12.0, "ts": {{ts-2}} }
+}

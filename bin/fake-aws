@@ -19,6 +19,7 @@ usage() {
   echo "    containers kill"
   echo "    data       populate"
   echo "    refresh    all"
+  echo "    refresh    containers"
   exit 1
 }
 
@@ -51,15 +52,14 @@ case "$1 $2" in
     docker run --hostname ${ns}_redis    --name ${ns}_redis    --privileged -p 6379:6379 -td ${ns}/redis
     ;;
   "containers kill")
-    set +e
     log_green "  ..stopping containers"
     docker stop  ${ns}_dynamodb ${ns}_s3 ${ns}_redis ${ns}_client
     log_green "  ..removing containers"
     docker rm -f ${ns}_dynamodb ${ns}_s3 ${ns}_redis ${ns}_client
     ;;
   "data populate")
+    set -e
     log_green "  ..creating data"
-    # FIXME: hostname endpoints are not resolved
     cli aws dynamodb --endpoint-url http://$(get_docker_ip ${ns}_dynamodb):7777 list-tables
     cli aws s3api create-bucket --bucket dummy_bucket --create-bucket-configuration LocationConstraint=eu-west-1
     cli aws s3 --endpoint-url http://$(get_docker_ip ${ns}_s3):8080 ls s3://dummy
@@ -67,8 +67,15 @@ case "$1 $2" in
     cli bash
     ;;
   "refresh all")
+    set +e
     $0 containers kill
     $0 images delete
+    set -e
+    $0 images build
+    $0 containers run
+    $0 data populate
+    ;;
+  "refresh containers")
     set -e
     $0 images build
     $0 containers run

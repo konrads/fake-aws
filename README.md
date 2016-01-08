@@ -10,11 +10,14 @@ Creates necessary docker images, containers, populates data.
 
 To run:
 ```bash
-# refresh docker containers
+# (re)build images and containers, populate data
 > bin/fake-aws refresh all
+# or once images are created
+> bin/fake-aws refresh containers
 
-# populate data for docker-machine's host
-> data_dir=example/aws-data dynamodb_host=192.168.99.100 s3_host=192.168.99.100 redis_host=192.168.99.100 bin/aws-populate refresh all
+# populate fake-aws from the host
+> bin/data-gen uat example/aws-templates example/aws-stage
+> data_dir=example/aws-stage dynamodb_host=192.168.99.100 s3_host=192.168.99.100 redis_host=192.168.99.100 bin/aws-populate refresh all
 ```
 
 Snags

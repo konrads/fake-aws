@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import os.path
 import re
 import shutil
 import sys
@@ -79,5 +80,6 @@ if __name__ == "__main__":
     files = read_dir(source_dir)
     token_replace_dirs(files, source_dir, target_dir, token_matchers)
     token_replace_contents(files, token_matchers)
-    shutil.rmtree(target_dir)
+    if os.path.exists(target_dir):
+      shutil.rmtree(target_dir)
     persist(files)
