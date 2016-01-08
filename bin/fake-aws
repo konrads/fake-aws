@@ -57,15 +57,6 @@ case "$1 $2" in
     log_green "  ..removing containers"
     docker rm -f ${ns}_dynamodb ${ns}_s3 ${ns}_redis ${ns}_client
     ;;
-  "data populate")
-    set -e
-    log_green "  ..creating data"
-    cli aws dynamodb --endpoint-url http://$(get_docker_ip ${ns}_dynamodb):7777 list-tables
-    cli aws s3api create-bucket --bucket dummy_bucket --create-bucket-configuration LocationConstraint=eu-west-1
-    cli aws s3 --endpoint-url http://$(get_docker_ip ${ns}_s3):8080 ls s3://dummy
-    cli redis-cli -h $(get_docker_ip ${ns}_redis) keys \\*
-    cli bash
-    ;;
   "refresh all")
     set +e
     $0 containers kill
@@ -73,13 +64,11 @@ case "$1 $2" in
     set -e
     $0 images build
     $0 containers run
-    $0 data populate
     ;;
   "refresh containers")
     set -e
     $0 images build
     $0 containers run
-    $0 data populate
     ;;
   *)
     log_bold "  Not a valid command"
