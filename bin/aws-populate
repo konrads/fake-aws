@@ -6,12 +6,6 @@ if [ "$data_dir" = "" ]
 then
   data_dir="$(dirname "$curr_dir")/aws-data"
 fi
-if [ "$endpoint_host" != "" ]
-then
-  dynamodb_endpoint_param="--endpoint-url http://$endpoint_host:7777"
-  s3_endpoint_param="--endpoint-url http://$endpoint_host:8080"
-  redis_endpoint_param="-h $endpoint_host"
-fi
 . $curr_dir/commons.sh
 
 usage() {
@@ -23,8 +17,23 @@ usage() {
   echo "    buckets delete"
   echo "    buckets create"
   echo "    buckets populate"
+  echo "    cache   delete"
+  echo "    cache   populate"
   echo "    refresh all"
   exit 1
+}
+
+set_param() {
+  local host_param_name=$1
+  local host_param_value=$2
+  local param_name=$3
+  local param_value=$4
+  if [ "$host_param_value" = "" ]
+  then
+    export $host_param_name="localhost"
+  else
+    export $param_name="$param_value"
+  fi
 }
 
 wait_till_table_doesnt_exist() {
@@ -74,8 +83,11 @@ tablename() {
 if [[ $# -lt 1 || "$1" == "help" ]]; then usage; fi
 
 set -e
-
-ensure_tools "aws --version" "jq --version"
+ensure_tools "aws --version" "jq --version" "redis-cli --version"
+set_param "dynamodb_host" "$dynamodb_host" "dynamodb_endpoint_param" "--endpoint-url http://$dynamodb_host:7777"
+set_param "s3_host"       "$s3_host"       "s3_endpoint_param"       "--endpoint-url http://$s3_host:8080"
+set_param "redis_host"    "$redis_host"    "redis_endpoint_param"    "-h $redis_host"
+log_bold "  Using: data_dir=$data_dir, dynamodb_host=$dynamodb_host, s3_host=$s3_host, redis_host=$redis_host"
 case "$1 $2" in
   "tables delete")
     for table_file in $data_dir/dynamodb/schema/*.schema.json
@@ -106,21 +118,38 @@ case "$1 $2" in
     done
     ;;
   "buckets delete")
+    set +e
     for bucket in $(ls $data_dir/s3)
     do
-      aws s3 $s3_endpoint_param rb s3://$bucket
+      log_green "  ..deleting bucket $bucket"
+      aws s3 rb s3://$bucket $s3_endpoint_param --force
+      # aws s3api $s3_endpoint_param delete-bucket --bucket $bucket --force
     done
+    set -e
     ;;
   "buckets create")
     for bucket in $(ls $data_dir/s3)
     do
-      aws s3 $s3_endpoint_param mb s3://$bucket
+      log_green "  ..creating bucket $bucket"
+      aws s3api $s3_endpoint_param create-bucket --bucket $bucket
     done
     ;;
   "buckets populate")
     for bucket in $(ls $data_dir/s3)
     do
+      log_green "  ..populating bucket $bucket"
       aws s3 $s3_endpoint_param cp $data_dir/s3/$bucket s3://$bucket/ --recursive
+    done
+    ;;
+  "cache delete")
+    log_green "  ..clearing redis"
+    echo "flushall" | redis-cli $redis_endpoint_param
+    ;;
+  "cache populate")
+    for redis_cmds in $(ls $data_dir/redis/*.redis.cmds)
+    do
+      log_green "  ..populating redis with $redis_cmds"
+      cat $redis_cmds | redis-cli $redis_endpoint_param
     done
     ;;
   "refresh all")
@@ -130,6 +159,8 @@ case "$1 $2" in
     $0 buckets delete
     $0 buckets create
     $0 buckets populate
+    $0 cache delete
+    $0 cache populate
     ;;
   *)
     echo -e "  ${red}Not a valid command${reset}"

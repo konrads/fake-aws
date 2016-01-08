@@ -61,7 +61,7 @@ case "$1 $2" in
     log_green "  ..creating data"
     # FIXME: hostname endpoints are not resolved
     cli aws dynamodb --endpoint-url http://$(get_docker_ip ${ns}_dynamodb):7777 list-tables
-    cli aws s3 --endpoint-url http://$(get_docker_ip ${ns}_s3):8080 mb s3://dummy
+    cli aws s3api create-bucket --bucket dummy_bucket --create-bucket-configuration LocationConstraint=eu-west-1
     cli aws s3 --endpoint-url http://$(get_docker_ip ${ns}_s3):8080 ls s3://dummy
     cli redis-cli -h $(get_docker_ip ${ns}_redis) keys \\*
     cli bash
