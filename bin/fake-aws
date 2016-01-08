@@ -4,8 +4,12 @@ curr_dir="$(dirname "$0")"
 . $curr_dir/commons.sh
 
 cli() {
+  local aws_data_dir=$1
+  shift
   docker run --rm --hostname ${ns}_client --name ${ns}_client --privileged -ti \
-    --link ${ns}_s3:${ns}_s3 --link ${ns}_dynamodb:${ns}_dynamodb --link ${ns}_redis:${ns}_redis \
+    --link ${ns}_s3:s3 --link ${ns}_dynamodb:dynamodb --link ${ns}_redis:redis \
+    -v $(pwd)/$curr_dir:/opt/fake-aws/bin \
+    -v $aws_data_dir:/opt/fake-aws/data \
     ${ns}/client $@
 }
 
@@ -20,6 +24,7 @@ usage() {
   echo "    data       populate"
   echo "    refresh    all"
   echo "    refresh    containers"
+  echo "    populate   all         <aws-data-dir>"
   exit 1
 }
 
@@ -52,23 +57,39 @@ case "$1 $2" in
     docker run --hostname ${ns}_redis    --name ${ns}_redis    --privileged -p 6379:6379 -td ${ns}/redis
     ;;
   "containers kill")
+    set +e
     log_green "  ..stopping containers"
-    docker stop  ${ns}_dynamodb ${ns}_s3 ${ns}_redis ${ns}_client
+    docker stop  ${ns}_dynamodb ${ns}_s3 ${ns}_redis
+    docker stop  ${ns}_client
     log_green "  ..removing containers"
     docker rm -f ${ns}_dynamodb ${ns}_s3 ${ns}_redis ${ns}_client
     ;;
+  "populate all")
+    aws_data_dir=$3
+    if [ "$aws_data_dir" == "" ]
+    then
+      log_red "  Missing <aws-data-dir>!"
+      usage
+    fi
+    cli $(pwd)/$aws_data_dir aws-populate refresh all
+    ;;
   "refresh all")
     set +e
+    shift 2
     $0 containers kill
-    $0 images delete
+    # $0 images delete
     set -e
     $0 images build
     $0 containers run
+    $0 populate all $@
     ;;
   "refresh containers")
+    set +e
+    shift 2
+    $0 containers kill
     set -e
-    $0 images build
     $0 containers run
+    $0 populate all $@
     ;;
   *)
     log_bold "  Not a valid command"
