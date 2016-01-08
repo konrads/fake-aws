@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# lifted of: https://github.com/trayio/dynamodb-local
-# uses: http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tools.DynamoDBLocal.html
+
 curr_dir="$(dirname "$0")"
 if [ "$data_dir" = "" ]
 then
@@ -24,14 +23,11 @@ usage() {
 }
 
 set_param() {
-  local host_param_name=$1
-  local host_param_value=$2
-  local param_name=$3
-  local param_value=$4
-  if [ "$host_param_value" = "" ]
+  local host=$1
+  local param_name=$2
+  local param_value=$3
+  if [ "$host" != "" ]
   then
-    export $host_param_name="localhost"
-  else
     export $param_name="$param_value"
   fi
 }
@@ -84,16 +80,15 @@ if [[ $# -lt 1 || "$1" == "help" ]]; then usage; fi
 
 set -e
 ensure_tools "aws --version" "jq --version" "redis-cli --version"
-set_param "dynamodb_host" "$dynamodb_host" "dynamodb_endpoint_param" "--endpoint-url http://$dynamodb_host:7777"
-set_param "s3_host"       "$s3_host"       "s3_endpoint_param"       "--endpoint-url http://$s3_host:8080"
-set_param "redis_host"    "$redis_host"    "redis_endpoint_param"    "-h $redis_host"
+set_param "$dynamodb_host" "dynamodb_endpoint_param" "--endpoint-url http://$dynamodb_host:7777"
+set_param "$s3_host"       "s3_endpoint_param"       "--endpoint-url http://$s3_host:8080"
+set_param "$redis_host"    "redis_endpoint_param"    "-h $redis_host"
 log_bold "  Using: data_dir=$data_dir, dynamodb_host=$dynamodb_host, s3_host=$s3_host, redis_host=$redis_host"
 case "$1 $2" in
   "tables delete")
     for table_file in $data_dir/dynamodb/schema/*.schema.json
     do
       table=$(tablename $table_file)
-      echo $table_file $table
       set +e
       log_green "  ..deleting table $table"
       aws dynamodb delete-table $dynamodb_endpoint_param --table-name $table

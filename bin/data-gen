@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+
+import os
+import re
+import shutil
+import sys
+import time
+from datetime import datetime, timedelta
+
+class TemplatedFile(object):
+    new_name = None
+    new_content = None
+    def __init__(self, org_name, is_dir, org_content):
+        self.org_name = org_name
+        self.is_dir = is_dir
+        self.org_content = org_content
+    def __repr__(self):
+        return """tf: org_name: %s, is_dir: %s, new_name: %s
+   org_content: %s
+   new_content: %s""" % (self.org_name, self.is_dir, self.new_name, self.org_content, self.new_content)
+
+def sub(content, token_matchers):
+    for matcher, replacer in token_matchers.iteritems():
+        content = matcher.sub(replacer, content)
+    return content
+
+def read_dir(dir):
+    templated_files = []
+    for root, _, files in os.walk(dir):
+        templated_files.append(TemplatedFile(root, True, None))
+        for f in files:
+            filename = root + '/' + f
+            with open(filename, 'r') as f2:
+                contents = f2.read()
+                templated_files.append(TemplatedFile(filename, False, contents))
+    return templated_files
+
+def token_replace_dirs(files, source_dir, target_dir, token_matchers):
+    for f in files:
+        new_name = target_dir + f.org_name[len(source_dir):]
+        f.new_name = sub(new_name, token_matchers)
+
+def token_replace_contents(files, token_matchers):
+    for f in files:
+        if not f.is_dir:
+            f.new_content = sub(f.org_content, token_matchers)
+
+def persist(files):
+    for f in files:
+        if f.is_dir:
+            os.mkdir(f.new_name)
+        else:
+            with open(f.new_name, 'w') as f2:
+                f2.write(f.new_content)
+
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print 'Usage: %s <prefix> <source_dir> <target_dir>' % sys.argv[0]
+        exit(-1)
+
+    prefix = sys.argv[1]
+    source_dir = sys.argv[2]
+    target_dir = sys.argv[3]
+
+    ts = int(time.time())
+    dt = datetime.fromtimestamp(ts)
+    yyyymm = dt.strftime('%Y%m')
+    yyyy_mm_dd = dt.strftime('%Y-%m-%d')
+
+    token_matchers = {
+        re.compile(r'\{\{prefix\}\}'):           lambda _: prefix,
+        re.compile(r'\{\{yyyymm\}\}'):           lambda _: yyyymm,
+        re.compile(r'\{\{yyyy-mm-dd\}\}'):       lambda _: yyyy_mm_dd,
+        re.compile(r'\{\{yyyy-mm-dd-(\d+)\}\}'): lambda m: (dt - timedelta(days=int(m.group(1)))).strftime('%Y-%m-%d'),
+        re.compile(r'\{\{ts\}\}'):               lambda _: str(ts),
+        re.compile(r'\{\{ts-(\d+)\}\}'):         lambda m: str(ts-int(m.group(1)))
+    }
+
+    files = read_dir(source_dir)
+    token_replace_dirs(files, source_dir, target_dir, token_matchers)
+    token_replace_contents(files, token_matchers)
+    shutil.rmtree(target_dir)
+    persist(files)
