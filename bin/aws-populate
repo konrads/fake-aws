@@ -88,7 +88,6 @@ ensure_tools "aws --version" "jq --version" "redis-cli --version"
 set_param "$dynamodb_host" "dynamodb_endpoint_param" "--endpoint-url http://$dynamodb_host:7777"
 set_param "$s3_host"       "s3_endpoint_param"       "--endpoint-url http://$s3_host:8080"
 set_param "$redis_host"    "redis_endpoint_param"    "-h $redis_host"
-# log_bold "  Using: data_dir=$data_dir, dynamodb_host=$dynamodb_host, s3_host=$s3_host, redis_host=$redis_host"
 case "$1 $2" in
   "tables delete")
     for table_file in $data_dir/dynamodb/schema/*.schema.json
@@ -127,7 +126,6 @@ case "$1 $2" in
     do
       log_green "  ..deleting bucket $bucket"
       aws s3 rb s3://$bucket $s3_endpoint_param --force
-      # aws s3api $s3_endpoint_param delete-bucket --bucket $bucket --force
     done
     set -e
     ;;
