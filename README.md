@@ -4,24 +4,24 @@ fake-aws
 Local implementations of AWS services:
 * DynamoDB
 * S3
-* ElasticCache (redis)
+* ElastiCache (redis)
 
 Creates docker images:
-* dynamodb
-* s3
-* redis, ie. elasticache
-* client, with tools: aws-cli, redis, jq
+* fake_aws_dynamodb
+* fake_aws_s3
+* fake_aws_cache, (redis)
+* client, with tools: `aws-cli`, `redis`, `jq`
 
 The executable scripts are:
-* fake-aws - creates images and containers, runs *some* commands in the client container
-* data-gen - generates data from a template dir (from `example/aws-template`), substituting tokens from both file names and contents:
-  * {{prefix}} - provided prefix, eg. user1/uat/stage/prod
-  * {{yyyymm}} - today's year and month, eg. 201601
-  * {{yyyy-mm-dd}} - today's year, month and day, eg. 2016-01-07
-  * {{yyyy-mm-dd-5}} - today's year, month and day, minus 5 days, eg. 2016-01-02
-  * {{ts}} - current's timestamp, ie. seconds from epoch, eg. 1452369900
-  * {{ts-60}} - current's timestamp a minute ago, eg. 1452369840
-* aws-populate - populates data from dir structure (potentially generated with `data-gen`):
+* `fake-aws` - creates images and containers, runs *some* commands in the client container
+* `data-gen` - generates data from a template dir (from `example/aws-template`), substituting tokens from both file names and contents:
+  * `{{prefix}}` - provided prefix, eg. user1/uat/stage/prod
+  * `{{yyyymm}}` - today's year and month, eg. 201601
+  * `{{yyyy-mm-dd}}` - today's year, month and day, eg. 2016-01-07
+  * `{{yyyy-mm-dd-5}}` - today's year, month and day, minus 5 days, eg. 2016-01-02
+  * `{{ts}}` - current's timestamp, ie. seconds from epoch, eg. 1452369900
+  * `{{ts-60}}` - current's timestamp a minute ago, eg. 1452369840
+* `aws-populate` - populates data from dir structure (potentially generated with `data-gen`):
 ```
 data-dir
   |
