@@ -77,9 +77,9 @@ To run
 > data_dir=example/aws-stage bin/aws-populate refresh all
 
 # list dynamodb, s3 & redis, on: fake from host, fake from client, real from host
-> data_dir=example/aws-stage dynamodb_host=192.168.99.100 s3_host=192.168.99.100 redis_host=192.168.99.100 bin/aws-populate list all
+> dynamodb_host=192.168.99.100 s3_host=192.168.99.100 redis_host=192.168.99.100 bin/aws-populate list all
 > bin/fake-aws list all
-> data_dir=example/aws-stage bin/aws-populate list all
+> bin/aws-populate list all
 ```
 
 Snags
