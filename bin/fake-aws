@@ -25,6 +25,7 @@ usage() {
   echo "    refresh    all"
   echo "    refresh    containers"
   echo "    populate   all         <aws-data-dir>"
+  echo "    list       all"
   exit 1
 }
 
@@ -91,8 +92,11 @@ case "$1 $2" in
     $0 containers run
     $0 populate all $@
     ;;
+  "list all")
+    cli $(pwd)/$aws_data_dir aws-populate list all
+    ;;
   *)
-    log_bold "  Not a valid command"
+    log_bold "  Not a valid command: $@"
     usage
     ;;
 esac

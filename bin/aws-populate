@@ -13,15 +13,20 @@ usage() {
   echo "    tables  delete"
   echo "    tables  create"
   echo "    tables  populate"
+  echo "    tables  list"
   echo "    buckets delete"
   echo "    buckets create"
   echo "    buckets populate"
+  echo "    buckets list"
   echo "    cache   delete"
   echo "    cache   populate"
+  echo "    cache   list"
   echo "    refresh all"
+  echo "    list all"
   exit 1
 }
 
+# sets xx_endpoint params for dynamodb, s3, redis
 set_param() {
   local host=$1
   local param_name=$2
@@ -112,6 +117,10 @@ case "$1 $2" in
       aws dynamodb batch-write-item $dynamodb_endpoint_param --cli-input-json file://$data_file
     done
     ;;
+  "tables list")
+    log_green "  ..dynamodb tables:"
+    aws dynamodb list-tables $dynamodb_endpoint_param
+    ;;
   "buckets delete")
     set +e
     for bucket in $(ls $data_dir/s3)
@@ -136,6 +145,15 @@ case "$1 $2" in
       aws s3 $s3_endpoint_param cp $data_dir/s3/$bucket s3://$bucket/ --recursive
     done
     ;;
+  "buckets list")
+    buckets="$(aws s3 ls $s3_endpoint_param | awk '{print $3}')"
+    log_green "  ..s3 buckets:"
+    for bucket in $buckets
+    do
+      echo $bucket
+      aws s3 ls s3://$bucket $s3_endpoint_param --recursive
+    done
+    ;;
   "cache delete")
     log_green "  ..clearing redis"
     echo "flushall" | redis-cli $redis_endpoint_param
@@ -147,6 +165,10 @@ case "$1 $2" in
       cat $redis_cmds | redis-cli $redis_endpoint_param
     done
     ;;
+  "cache list")
+    log_green "  ..cache keys:"
+    echo "keys *" | redis-cli $redis_endpoint_param
+    ;;
   "refresh all")
     $0 tables delete
     $0 tables create
@@ -157,8 +179,13 @@ case "$1 $2" in
     $0 cache delete
     $0 cache populate
     ;;
+  "list all")
+    $0 tables list
+    $0 buckets list
+    $0 cache list
+    ;;
   *)
-    echo -e "  ${red}Not a valid command${reset}"
+    log_red "  Not a valid command: $@"
     usage
     ;;
 esac

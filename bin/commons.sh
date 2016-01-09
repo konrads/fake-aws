@@ -32,7 +32,7 @@ ensure_tools() {
   for tool_check in "${@}"
   do
     # log_bold "  ..testing tool $tool_check"
-    $tool_check > /dev/null
+    $tool_check &> /dev/null
     assert_eq "$tool_check exit code" $? 0
   done
   set -e
