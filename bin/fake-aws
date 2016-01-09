@@ -3,14 +3,25 @@ ns=fake_aws
 curr_dir="$(dirname "$0")"
 . $curr_dir/commons.sh
 
+verify_data_dir() {
+  if [ "$1" == "" ]
+  then
+    log_red "  Missing <data-dir>!"
+    usage
+  fi
+}
+
+# works with 3 or 4 params only, note /opt/fake-aws/data is not mounted if $4 is empty
 cli() {
-  local aws_data_dir=$1
-  shift
+  local data_dir=$4
+  if [ "$data_dir" != "" ]
+  then
+    data_dir_mount_param="-v $data_dir:/opt/fake-aws/data"
+  fi
   docker run --rm --hostname ${ns}_client --name ${ns}_client --privileged -ti \
     --link ${ns}_s3:s3 --link ${ns}_dynamodb:dynamodb --link ${ns}_redis:redis \
-    -v $(pwd)/$curr_dir:/opt/fake-aws/bin \
-    -v $aws_data_dir:/opt/fake-aws/data \
-    ${ns}/client $@
+    -v $(pwd)/$curr_dir:/opt/fake-aws/bin $data_dir_mount_param \
+    ${ns}/client $1 $2 $3 /opt/fake-aws/data
 }
 
 usage() {
@@ -22,9 +33,9 @@ usage() {
   echo "    containers run"
   echo "    containers kill"
   echo "    data       populate"
-  echo "    refresh    all"
-  echo "    refresh    containers"
-  echo "    populate   all         <aws-data-dir>"
+  echo "    refresh    all         <data-dir>"
+  echo "    refresh    containers  <data-dir>"
+  echo "    populate   all         <data-dir>"
   echo "    list       all"
   exit 1
 }
@@ -66,34 +77,32 @@ case "$1 $2" in
     docker rm -f ${ns}_dynamodb ${ns}_s3 ${ns}_redis ${ns}_client
     ;;
   "populate all")
-    aws_data_dir=$3
-    if [ "$aws_data_dir" == "" ]
-    then
-      log_red "  Missing <aws-data-dir>!"
-      usage
-    fi
-    cli $(pwd)/$aws_data_dir aws-populate refresh all
+    verify_data_dir $3
+    data_dir=$3
+    cli aws-populate refresh all $(pwd)/$data_dir
     ;;
   "refresh all")
     set +e
-    shift 2
+    verify_data_dir $3
+    data_dir=$3
     $0 containers kill
     # $0 images delete
     set -e
     $0 images build
     $0 containers run
-    $0 populate all $@
+    $0 populate all $data_dir
     ;;
   "refresh containers")
     set +e
-    shift 2
+    verify_data_dir $3
+    data_dir=$3
     $0 containers kill
     set -e
     $0 containers run
-    $0 populate all $@
+    $0 populate all $data_dir
     ;;
   "list all")
-    cli $(pwd)/$aws_data_dir aws-populate list all
+    cli aws-populate list all
     ;;
   *)
     log_bold "  Not a valid command: $@"

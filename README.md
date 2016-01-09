@@ -68,13 +68,13 @@ To run
 # or once images are created
 > bin/fake-aws refresh containers
 
-# generate data from templates
+# generate data stage from templates
 > bin/data-gen uat example/aws-templates example/aws-stage
 
 # populate dynamodb, s3 & redis, on: fake from host, fake from client, real from host
-> data_dir=example/aws-stage dynamodb_host=192.168.99.100 s3_host=192.168.99.100 redis_host=192.168.99.100 bin/aws-populate refresh all
+> dynamodb_host=192.168.99.100 s3_host=192.168.99.100 redis_host=192.168.99.100 bin/aws-populate refresh all example/aws-stage
 > bin/fake-aws populate all example/aws-stage
-> data_dir=example/aws-stage bin/aws-populate refresh all
+> bin/aws-populate refresh all example/aws-stage
 
 # list dynamodb, s3 & redis, on: fake from host, fake from client, real from host
 > dynamodb_host=192.168.99.100 s3_host=192.168.99.100 redis_host=192.168.99.100 bin/aws-populate list all

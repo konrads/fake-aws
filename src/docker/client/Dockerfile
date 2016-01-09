@@ -14,7 +14,6 @@ RUN  pip install awscli
 RUN  apt-get install -y redis-tools
 
 ENV PATH=$PATH:/opt/fake-aws/bin
-ENV data_dir=/opt/fake-aws/data
 ENV dynamodb_host=dynamodb
 ENV s3_host=s3
 ENV redis_host=redis
