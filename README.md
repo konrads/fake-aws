@@ -10,7 +10,7 @@ Creates docker images:
 * fake_aws_dynamodb
 * fake_aws_s3
 * fake_aws_cache, (redis)
-* client, with tools: `aws-cli`, `redis`, `jq`
+* fake_aws_client, with tools: `aws-cli`, `redis`, `jq`
 
 The executable scripts are:
 * `fake-aws` - creates images and containers, runs *some* commands in the client container
