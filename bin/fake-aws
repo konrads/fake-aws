@@ -20,7 +20,7 @@ cli() {
   fi
   docker run --rm --hostname ${ns}_client --name ${ns}_client --privileged -ti \
     --link ${ns}_s3:s3 --link ${ns}_dynamodb:dynamodb --link ${ns}_redis:redis \
-    -v $(pwd)/$curr_dir:/opt/fake-aws/bin $data_dir_mount_param \
+    -v $curr_dir:/opt/fake-aws/bin $data_dir_mount_param \
     ${ns}/client $1 $2 $3 /opt/fake-aws/data
 }
 
