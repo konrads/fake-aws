@@ -9,7 +9,7 @@ RUN        cd /opt/s3proxy/src/s3proxy && mvn clean compile assembly:single
 RUN        cp /opt/s3proxy/src/s3proxy/target/s3proxy-*-with-dependencies.jar /opt/s3proxy/s3proxy.jar
 
 # entrypoing for server
-EXPOSE     8080
+EXPOSE     3629
 ENTRYPOINT ["java", "-jar", "/opt/s3proxy/s3proxy.jar", "--properties", "/opt/s3proxy/s3proxy.conf"]
 
 # NOTE - above could be reduced to following, once 1.5.0 version is released...
@@ -18,5 +18,5 @@ ENTRYPOINT ["java", "-jar", "/opt/s3proxy/s3proxy.jar", "--properties", "/opt/s3
 # RUN        chmod +x /opt/s3proxy/s3proxy
 
 # entrypoing for server
-# EXPOSE     8080
+# EXPOSE     3629
 # ENTRYPOINT ["/opt/s3proxy/s3proxy", "--properties", "/opt/s3proxy/s3proxy.conf"]
