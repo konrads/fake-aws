@@ -8,7 +8,7 @@ RUN        cd /opt/s3proxy/src && git clone https://github.com/andrewgaul/s3prox
 RUN        cd /opt/s3proxy/src/s3proxy && mvn clean compile assembly:single
 RUN        cp /opt/s3proxy/src/s3proxy/target/s3proxy-*-with-dependencies.jar /opt/s3proxy/s3proxy.jar
 
-# entrypoing for server
+# entrypoint for server
 EXPOSE     3629
 ENTRYPOINT ["java", "-jar", "/opt/s3proxy/s3proxy.jar", "--properties", "/opt/s3proxy/s3proxy.conf"]
 
