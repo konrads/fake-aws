@@ -6,6 +6,9 @@ Build a metrics visualization viewer from scratch:
 > git clone https://github.com/kamon-io/docker-grafana-graphite.git
 > cd docker-grafana-graphite
 > ./build
+# add "-p 81:81 -p 2003:2003" to ./start script
+# port 81 is where graphite UI resides, eg. http://192.168.99.100:81
+# port 2003 is where you publish graphite bound data, eg. by Coda Hale's metrics
 > ./start
 ```
 
