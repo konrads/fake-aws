@@ -15,15 +15,13 @@ verify_data_dir() {
 
 # works with 3 or 4 params only, note /opt/fake-aws/data is not mounted if $4 is empty
 cli() {
-  local data_dir=$4
-  if [ "$data_dir" != "" ]
-  then
-    data_dir_mount_param="-v $data_dir:/opt/fake-aws/data"
-  fi
+  local aws_data_dir=$1
+  shift
   docker run --rm --hostname ${cnt_ns}_client --name ${cnt_ns}_client --privileged -ti \
     --link ${cnt_ns}_s3:s3 --link ${cnt_ns}_dynamodb:dynamodb --link ${cnt_ns}_redis:redis \
-    -v $curr_dir:/opt/fake-aws/bin $data_dir_mount_param \
-    ${img_ns}_client $1 $2 $3 /opt/fake-aws/data
+    -v $curr_dir:/opt/fake-aws/bin \
+    -v $(pwd)/$aws_data_dir:/opt/fake-aws/data \
+    ${img_ns}/client $@ /opt/fake-aws/data
 }
 
 usage() {
@@ -48,8 +46,8 @@ if [[ $# -lt 1 || "$1" == "help" ]]; then usage; fi
 ensure_tools "docker --version"
 case "$1 $2" in
   "env ")
-    docker-machine env default
     echo export DOCKER_IP=\"$(docker-machine ip default)\"
+    docker-machine env default
     echo
     ;;
   "images build")
@@ -62,7 +60,7 @@ case "$1 $2" in
     ;;
   "images delete")
     log_green "  ..deleting images"
-    docker rmi -f ${cnt_ns}/dynamodb ${cnt_ns}/s3 ${ns}/redis ${cnt_ns}/client
+    docker rmi -f ${img_ns}/dynamodb ${img_ns}/s3 ${img_ns}/redis ${img_ns}/client
     ;;
   "images push")
     log_green "  ..pushing images (requires hub credentials setup)"
@@ -82,14 +80,13 @@ case "$1 $2" in
     set +e
     log_green "  ..stopping containers"
     docker stop  ${cnt_ns}_dynamodb ${cnt_ns}_s3 ${cnt_ns}_redis
-    docker stop  ${cnt_ns}_client
     log_green "  ..removing containers"
-    docker rm -f ${cnt_ns}_dynamodb ${cnt_ns}_s3 ${cnt_ns}_redis ${cnt_ns}_client
+    docker rm -f ${cnt_ns}_dynamodb ${cnt_ns}_s3 ${cnt_ns}_redis
     ;;
   "populate all")
     verify_data_dir $3
     data_dir=$3
-    cli aws-populate refresh all $(pwd)/$data_dir
+    cli $data_dir aws-populate refresh all
     ;;
   "refresh all")
     set +e

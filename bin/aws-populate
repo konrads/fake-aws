@@ -92,6 +92,8 @@ ensure_tools "aws --version" "jq --version" "redis-cli --version"
 set_param "$dynamodb_host" "dynamodb_endpoint_param" "--endpoint-url http://$dynamodb_host:7777"
 set_param "$s3_host"       "s3_endpoint_param"       "--endpoint-url http://$s3_host:3629"
 set_param "$redis_host"    "redis_endpoint_param"    "-h $redis_host"
+set_param "$aws_region"    "aws_region_param"        "--create-bucket-configuration LocationConstraint=$aws_region"
+
 case "$1 $2" in
   "tables delete")
     verify_data_dir $3
@@ -147,7 +149,7 @@ case "$1 $2" in
     for bucket in $(ls $data_dir/s3)
     do
       log_green "  ..creating bucket $bucket"
-      aws s3api $s3_endpoint_param create-bucket --bucket $bucket
+      aws s3api $s3_endpoint_param create-bucket --bucket $bucket $aws_region_param
     done
     ;;
   "buckets populate")
