@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-img_ns=konrads/fake_aws
-cnt_ns=fake_aws
+ns=fake-aws
+repo_ns=konrads/${ns}
 curr_dir="$(dirname "$0")"
 root_dir="$(dirname "$curr_dir")"
 . $curr_dir/commons.sh
@@ -17,17 +17,16 @@ verify_data_dir() {
 cli() {
   local aws_data_dir=$1
   shift
-  docker run --rm --hostname ${cnt_ns}_client --name ${cnt_ns}_client --privileged -ti \
-    --link ${cnt_ns}_s3:s3 --link ${cnt_ns}_dynamodb:dynamodb --link ${cnt_ns}_redis:redis \
+  docker run --rm --hostname ${ns}-client --name ${ns}-client --privileged -ti \
+    --link ${ns}-s3:s3 --link ${ns}-dynamodb:dynamodb --link ${ns}-redis:redis \
     -v $curr_dir:/opt/fake-aws/bin \
     -v $(pwd)/$aws_data_dir:/opt/fake-aws/data \
-    ${img_ns}/client $@ /opt/fake-aws/data
+    ${ns}-client $@ /opt/fake-aws/data
 }
 
 usage() {
   echo "  Usage:"
   echo "    help"
-  echo "    env"
   echo "    images     build"
   echo "    images     delete"
   echo "    images     push"
@@ -45,43 +44,42 @@ if [[ $# -lt 1 || "$1" == "help" ]]; then usage; fi
 
 ensure_tools "docker --version"
 case "$1 $2" in
-  "env ")
-    echo export DOCKER_IP=\"$(docker-machine ip default)\"
-    docker-machine env default
-    echo
-    ;;
   "images build")
     set -e
     log_green "  ..building images"
-    docker build -t ${img_ns}_dynamodb $root_dir/src/docker/dynamodb
-    docker build -t ${img_ns}_s3       $root_dir/src/docker/s3
-    docker build -t ${img_ns}_redis    $root_dir/src/docker/redis
-    docker build -t ${img_ns}_client   $root_dir/src/docker/client
+    docker build -t ${ns}-dynamodb $root_dir/src/docker/dynamodb
+    docker build -t ${ns}-s3       $root_dir/src/docker/s3
+    docker build -t ${ns}-redis    $root_dir/src/docker/redis
+    docker build -t ${ns}-client   $root_dir/src/docker/client
     ;;
   "images delete")
     log_green "  ..deleting images"
-    docker rmi -f ${img_ns}/dynamodb ${img_ns}/s3 ${img_ns}/redis ${img_ns}/client
+    docker rmi -f ${ns}-dynamodb ${ns}-s3 ${ns}-redis ${ns}-client
     ;;
   "images push")
     log_green "  ..pushing images (requires hub credentials setup)"
-    docker push ${img_ns}_dynamodb
-    docker push ${img_ns}_s3
-    docker push ${img_ns}_redis
-    docker push ${img_ns}_client
+    docker tag ${ns}-dynamodb ${repo_ns}-dynamodb
+    docker tag ${ns}-s3 ${repo_ns}-s3
+    docker tag ${ns}-redis ${repo_ns}-redis
+    docker tag ${ns}-client ${repo_ns}-dynamodb
+    docker push ${ns}-dynamodb
+    docker push ${ns}-s3
+    docker push ${ns}-redis
+    docker push ${ns}-client
     ;;
   "containers run")
     set -e
     log_green "  ..starting containers"
-    docker run --hostname ${cnt_ns}_dynamodb --name ${cnt_ns}_dynamodb --privileged -p 7777:7777 -td ${img_ns}_dynamodb -inMemory -port 7777
-    docker run --hostname ${cnt_ns}_s3       --name ${cnt_ns}_s3       --privileged -p 3629:3629 -td ${img_ns}_s3
-    docker run --hostname ${cnt_ns}_redis    --name ${cnt_ns}_redis    --privileged -p 6379:6379 -td ${img_ns}_redis
+    docker run --hostname ${ns}-dynamodb --name ${ns}-dynamodb --privileged -p 7777:7777 -td ${ns}-dynamodb -inMemory -port 7777
+    docker run --hostname ${ns}-s3       --name ${ns}-s3       --privileged -p 3629:3629 -td ${ns}-s3
+    docker run --hostname ${ns}-redis    --name ${ns}-redis    --privileged -p 6379:6379 -td ${ns}-redis
     ;;
   "containers kill")
     set +e
     log_green "  ..stopping containers"
-    docker stop  ${cnt_ns}_dynamodb ${cnt_ns}_s3 ${cnt_ns}_redis
+    docker stop  ${ns}-dynamodb ${ns}-s3 ${ns}-redis
     log_green "  ..removing containers"
-    docker rm -f ${cnt_ns}_dynamodb ${cnt_ns}_s3 ${cnt_ns}_redis
+    docker rm -f ${ns}-dynamodb ${ns}-s3 ${ns}-redis
     ;;
   "populate all")
     verify_data_dir $3
