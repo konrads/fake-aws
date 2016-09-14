@@ -60,6 +60,8 @@ data-dir
 
 `aws-populate` can be run from host, requiring following tools on the host: `aws-cli`, `redis`, `jq`.  It can be run on both real aws and fake-aws. If targeting fake-aws from the host, set up `dynamodb_host`/`s3_host`/`redis_host` vars to point at local containers: `localhost` on linux, `192.168.99.100` on MacOS. Alternatively, running from the client container, which has all env preconfigured. `aws-populate` can also target real aws from the host, no env configuration is required.
 
+Motivation behind the project is best described in the [presentation slides](doc/Mocking-AWS.pdf).
+
 To run
 ------
 ```bash
